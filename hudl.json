@@ -2,7 +2,7 @@
     "Parameters": {
         "defaultVPC": {
             "Type": "String",
-            "Default": "vpc-cd9d90b7",
+            "Default": "vpc-4851e223",
             "Description": "Default VPC with 172.31.0.0/16"
         }
     },
@@ -53,7 +53,7 @@
                     "Ref": "defaultVPC"
                 },
                 "CidrBlock": "172.31.0.0/24",
-                "AvailabilityZone": "us-east-1a",
+                "AvailabilityZone": "us-east-2a",
                 "Tags": [
                     {
                         "Key": "Name",
@@ -69,7 +69,7 @@
                     "Ref": "defaultVPC"
                 },
                 "CidrBlock": "172.31.1.0/24",
-                "AvailabilityZone": "us-east-1b",
+                "AvailabilityZone": "us-east-2b",
                 "Tags": [
                     {
                         "Key": "Name",
@@ -151,7 +151,7 @@
                     "Ref": "defaultVPC"
                 },
                 "CidrBlock": "172.31.2.0/24",
-                "AvailabilityZone": "us-east-1a",
+                "AvailabilityZone": "us-east-2a",
                 "Tags": [
                     {
                         "Key": "Name",
@@ -167,7 +167,7 @@
                     "Ref": "defaultVPC"
                 },
                 "CidrBlock": "172.31.3.0/24",
-                "AvailabilityZone": "us-east-1b",
+                "AvailabilityZone": "us-east-2b",
                 "Tags": [
                     {
                         "Key": "Name",
@@ -361,7 +361,7 @@
                 "ContainerDefinitions": [
                     {
                         "Name": "flask-app",
-                        "Image": "319809584565.dkr.ecr.us-east-1.amazonaws.com/flask:latest",
+                        "Image": "436016543436.dkr.ecr.us-east-2.amazonaws.com/flask:latest",
                         "Essential": true,
                         "PortMappings": [
                             {
