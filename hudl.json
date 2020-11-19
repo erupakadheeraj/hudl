@@ -1,0 +1,476 @@
+{
+    "Parameters": {
+        "defaultVPC": {
+            "Type": "String",
+            "Default": "vpc-cd9d90b7",
+            "Description": "Default VPC with 172.31.0.0/16"
+        }
+    },
+    "Resources": {
+        "InternetGateway": {
+            "Type": "AWS::EC2::InternetGateway",
+            "Properties": {
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "PublicSubnetIGW"
+                    }
+                ]
+            }
+        },
+        "AttachGateway" : {
+   "Type" : "AWS::EC2::VPCGatewayAttachment",
+   "Properties" : {
+      "VpcId" : { "Ref" : "defaultVPC" },
+      "InternetGatewayId" : { "Ref" : "InternetGateway" }
+    }
+},
+        "PublicRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "defaultVPC"
+                }
+            }
+        },
+        "PublicRoute": {
+            "Type": "AWS::EC2::Route",
+            "DependsOn": ["AttachGateway","InternetGateway"],
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "GatewayId": {
+                    "Ref": "InternetGateway"
+                }
+            }
+        },
+        "PublicSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "defaultVPC"
+                },
+                "CidrBlock": "172.31.0.0/24",
+                "AvailabilityZone": "us-east-1a",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "PublicSubnet-1"
+                    }
+                ]
+            }
+        },
+        "PublicSubnet2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "defaultVPC"
+                },
+                "CidrBlock": "172.31.1.0/24",
+                "AvailabilityZone": "us-east-1b",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "PublicSubnet-2"
+                    }
+                ]
+            }
+        },
+        "PublicSubnetRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DependsOn": "PublicRoute",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PublicSubnet"
+                },
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                }
+            }
+        },
+        "PublicSubnetRouteTableAssociation2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DependsOn": "PublicRoute",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PublicSubnet2"
+                },
+                "RouteTableId": {
+                    "Ref": "PublicRouteTable"
+                }
+            }
+        },
+        "NatEIP": {
+            "Type": "AWS::EC2::EIP",
+            "Properties": {
+                "Domain": {
+                    "Ref": "defaultVPC"
+                }
+            }
+        },
+        "NatGateway": {
+            "Type": "AWS::EC2::NatGateway",
+            "Properties": {
+                "AllocationId": {
+                    "Fn::GetAtt": [
+                        "NatEIP",
+                        "AllocationId"
+                    ]
+                },
+                "SubnetId": {
+                    "Ref": "PublicSubnet"
+                }
+            }
+        },
+        "PrivateRouteTable": {
+            "Type": "AWS::EC2::RouteTable",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "defaultVPC"
+                }
+            }
+        },
+        "PrivateRoute": {
+            "Type": "AWS::EC2::Route",
+            "Properties": {
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                },
+                "DestinationCidrBlock": "0.0.0.0/0",
+                "NatGatewayId": {
+                    "Ref": "NatGateway"
+                }
+            }
+        },
+        "PrivateSubnet": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "defaultVPC"
+                },
+                "CidrBlock": "172.31.2.0/24",
+                "AvailabilityZone": "us-east-1a",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "PrivateSubnet-1"
+                    }
+                ]
+            }
+        },
+        "PrivateSubnet2": {
+            "Type": "AWS::EC2::Subnet",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "defaultVPC"
+                },
+                "CidrBlock": "172.31.3.0/24",
+                "AvailabilityZone": "us-east-1b",
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "PrivateSubnet-2"
+                    }
+                ]
+            }
+        },
+        "PrivateSubnetRouteTableAssociation": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DependsOn": "PrivateRoute",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PrivateSubnet"
+                },
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                }
+            }
+        },
+        "PrivateSubnetRouteTableAssociation2": {
+            "Type": "AWS::EC2::SubnetRouteTableAssociation",
+            "DependsOn": "PrivateRoute",
+            "Properties": {
+                "SubnetId": {
+                    "Ref": "PrivateSubnet2"
+                },
+                "RouteTableId": {
+                    "Ref": "PrivateRouteTable"
+                }
+            }
+        },
+        "ElbSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow http to client host",
+                "VpcId":"vpc-cd9d90b7",
+                "SecurityGroupIngress": [
+                    {
+                        "IpProtocol": "tcp",
+                        "FromPort": 80,
+                        "ToPort": 80,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ],
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "ECSSG": {
+            "Type": "AWS::EC2::SecurityGroup",
+            "Properties": {
+                "GroupDescription": "Allow connections to ECS service from ELB",
+                 "VpcId":"vpc-cd9d90b7",
+                "SecurityGroupEgress": [
+                    {
+                        "IpProtocol": -1,
+                        "FromPort": -1,
+                        "ToPort": -1,
+                        "CidrIp": "0.0.0.0/0"
+                    }
+                ]
+            }
+        },
+        "ECSSGIngress": {
+            "Type": "AWS::EC2::SecurityGroupIngress",
+            "Properties": {
+                "GroupId": {
+                    "Ref": "ECSSG"
+                },
+                "IpProtocol": "tcp",
+                "FromPort": 8000,
+                "ToPort": 8000,
+                "SourceSecurityGroupId": {
+                    "Fn::GetAtt": [
+                        "ElbSG",
+                        "GroupId"
+                    ]
+                }
+            }
+        },
+        "ECSALB": {
+            "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+            "Properties": {
+                "Subnets": [
+                    {
+                        "Ref": "PublicSubnet"
+                    },
+                    {
+                        "Ref": "PublicSubnet2"
+                    }
+                ],
+                "SecurityGroups": [
+                    {
+                        "Ref": "ElbSG"
+                    }
+                ],
+                "Tags": [
+                    {
+                        "Key": "Name",
+                        "Value": "ECS Load balancer"
+                    }
+                ]
+            }
+        },
+        "LoadBalancerListener": {
+            "Type": "AWS::ElasticLoadBalancingV2::Listener",
+            "Properties": {
+                "LoadBalancerArn": {
+                    "Ref": "ECSALB"
+                },
+                "Port": 80,
+                "Protocol": "HTTP",
+                "DefaultActions": [
+                    {
+                        "Type": "forward",
+                        "TargetGroupArn": {
+                            "Ref": "DefaultTargetGroup"
+                        }
+                    }
+                ]
+            }
+        },
+        "DefaultTargetGroup": {
+            "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+            "Properties": {
+                "VpcId": {
+                    "Ref": "defaultVPC"
+                },
+                "TargetType": "ip",
+                "Port": 8000,
+                "Protocol": "HTTP"
+            }
+        },
+        "ECSCluster": {
+            "Type": "AWS::ECS::Cluster",
+            "Properties": {
+                "ClusterName": "hudl"
+            }
+        },
+        "TaskExecutionRole": {
+            "Type": "AWS::IAM::Role",
+            "Properties": {
+                "AssumeRolePolicyDocument": {
+                    "Version": "2012-10-17",
+                    "Statement": [
+                        {
+                            "Sid": "TaskExecutionRole",
+                            "Effect": "Allow",
+                            "Principal": {
+                                "Service": "ecs-tasks.amazonaws.com"
+                            },
+                            "Action": "sts:AssumeRole"
+                        }
+                    ]
+                },
+                "ManagedPolicyArns": [
+                    "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
+                ]
+            }
+        },
+      "RolePolicies": {
+         "Type": "AWS::IAM::Policy",
+         "Properties": {
+            "PolicyName": "LogGroupCreation",
+            "PolicyDocument": {
+               "Version" : "2012-10-17",
+               "Statement": [ {
+                  "Effect": "Allow",
+                  "Action": "logs:CreateLogGroup",
+                  "Resource": "*"
+               } ]
+            },
+            "Roles": [ {
+               "Ref": "TaskExecutionRole"
+            } ]
+         }
+      },
+        "ECSTaskDefintion": {
+            "Type": "AWS::ECS::TaskDefinition",
+            "Properties": {
+                "RequiresCompatibilities": [
+                    "FARGATE"
+                ],
+                "ContainerDefinitions": [
+                    {
+                        "Name": "flask-app",
+                        "Image": "319809584565.dkr.ecr.us-east-1.amazonaws.com/flask:latest",
+                        "Essential": true,
+                        "PortMappings": [
+                            {
+                                "ContainerPort": 8000,
+                                "HostPort": 8000,
+                                "Protocol": "tcp"
+                            }
+                        ],
+                        "LogConfiguration": {
+                            "LogDriver": "awslogs",
+                            "Options": {
+                                "awslogs-create-group": "true",
+                                "awslogs-group": "/ecs/flask_app",
+                                "awslogs-region": "us-east-2",
+                                "awslogs-stream-prefix": "ecs"
+                            }
+                        }
+                    }
+                ],
+                "Cpu": 512,
+                "Memory": 1024,
+                "Family": "flask",
+                "NetworkMode": "awsvpc",
+                "ExecutionRoleArn": {
+                    "Fn::GetAtt": [
+                        "TaskExecutionRole",
+                        "Arn"
+                    ]
+                }
+            }
+        },
+        "ListenerRule": {
+            "Type": "AWS::ElasticLoadBalancingV2::ListenerRule",
+            "Properties": {
+                "ListenerArn": {
+                    "Ref": "LoadBalancerListener"
+                },
+                "Priority": 1,
+                "Conditions": [
+                    {
+                        "Field": "path-pattern",
+                        "Values": [
+                            "/"
+                        ]
+                    }
+                ],
+                "Actions": [
+                    {
+                        "TargetGroupArn": {
+                            "Ref": "DefaultTargetGroup"
+                        },
+                        "Type": "forward"
+                    }
+                ]
+            }
+        },
+        "ECSService": {
+            "Type": "AWS::ECS::Service",
+            "DependsOn": "ListenerRule",
+            "Properties": {
+                "Cluster": {
+                    "Ref": "ECSCluster"
+                },
+                "LaunchType":"FARGATE",
+                "DesiredCount": "3",
+                "TaskDefinition": {
+                    "Ref": "ECSTaskDefintion"
+                },
+                "DeploymentConfiguration": {
+                    "MaximumPercent": 200,
+                    "MinimumHealthyPercent": 100
+                },
+                "NetworkConfiguration": {
+                    "AwsvpcConfiguration": {
+                        "AssignPublicIp": "DISABLED",
+                        "SecurityGroups": [
+                            {
+                                "Fn::GetAtt": [
+                                    "ECSSG",
+                                    "GroupId"
+                                ]
+                            }
+                        ],
+                        "Subnets": [
+                            {
+                                "Ref": "PrivateSubnet2"
+                            },
+                            {
+                                "Ref": "PrivateSubnet"
+                            }
+                        ]
+                    }
+                },
+                "LoadBalancers": [
+                    {
+                        "ContainerName": "flask-app",
+                        "ContainerPort": 8000,
+                        "TargetGroupArn": {
+                            "Ref": "DefaultTargetGroup"
+                        }
+                    }
+                ]
+            }
+        }
+    },
+"Outputs" : {
+  "AppEndpoint" : {
+    "Description" : "Information about the value",
+    "Value" : { "Fn::GetAtt" : [ "ECSALB", "DNSName" ] }
+  }
+}
+}
