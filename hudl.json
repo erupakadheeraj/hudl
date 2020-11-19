@@ -204,7 +204,7 @@
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupDescription": "Allow http to client host",
-                "VpcId":"vpc-cd9d90b7",
+                "VpcId":{"Ref":"defaultVPC"},
                 "SecurityGroupIngress": [
                     {
                         "IpProtocol": "tcp",
@@ -227,7 +227,7 @@
             "Type": "AWS::EC2::SecurityGroup",
             "Properties": {
                 "GroupDescription": "Allow connections to ECS service from ELB",
-                 "VpcId":"vpc-cd9d90b7",
+                "VpcId":{"Ref":"defaultVPC"},
                 "SecurityGroupEgress": [
                     {
                         "IpProtocol": -1,
