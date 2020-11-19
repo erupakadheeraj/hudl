@@ -52,7 +52,7 @@
                 "VpcId": {
                     "Ref": "defaultVPC"
                 },
-                "CidrBlock": "172.31.0.0/24",
+                "CidrBlock": "172.31.60.0/24",
                 "AvailabilityZone": "us-east-2a",
                 "Tags": [
                     {
@@ -68,7 +68,7 @@
                 "VpcId": {
                     "Ref": "defaultVPC"
                 },
-                "CidrBlock": "172.31.1.0/24",
+                "CidrBlock": "172.31.61.0/24",
                 "AvailabilityZone": "us-east-2b",
                 "Tags": [
                     {
@@ -150,7 +150,7 @@
                 "VpcId": {
                     "Ref": "defaultVPC"
                 },
-                "CidrBlock": "172.31.2.0/24",
+                "CidrBlock": "172.31.62.0/24",
                 "AvailabilityZone": "us-east-2a",
                 "Tags": [
                     {
@@ -166,7 +166,7 @@
                 "VpcId": {
                     "Ref": "defaultVPC"
                 },
-                "CidrBlock": "172.31.3.0/24",
+                "CidrBlock": "172.31.63.0/24",
                 "AvailabilityZone": "us-east-2b",
                 "Tags": [
                     {
