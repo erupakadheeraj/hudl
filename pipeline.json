@@ -1,0 +1,192 @@
+{
+Resources:
+{
+"codecommit":
+{
+  "Type" : "AWS::CodeCommit::Repository",
+  "Properties" : {
+      "Code" : {
+        "Branch":"master"        
+},
+      "RepositoryDescription" : "SourceCode",
+      "RepositoryName" : "kc",
+          
+    }
+},
+    "CodeBuildProject": {
+      "Type": "AWS::CodeBuild::Project",
+      "Properties": {
+        "ServiceRole": {
+          "Fn::GetAtt": [
+            "CodeBuildRole",
+            "Arn"
+          ]
+        },
+        "Artifacts": {
+          "Type": "CODEPIPELINE"
+        },
+        "Environment": {
+          "Type": "LINUX_CONTAINER",
+          "ComputeType": "BUILD_GENERAL1_SMALL",
+          "Image": "aws/codebuild/ubuntu-base:14.04"
+        },
+        "Source": {
+          "Type": "CODEPIPELINE"
+        },
+        "TimeoutInMinutes": 10
+        }
+    },
+    "CodeBuildRole": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "sts:AssumeRole"
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "Service": [
+                  "codebuild.amazonaws.com"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "Path": "/",
+        "Policies": [
+          {
+            "PolicyName": "CodeBuildAccess",
+            "PolicyDocument": {
+              "Version": "2012-10-17",
+              "Statement": [
+                {
+                  "Action": [
+                    "logs:*",
+                    "ec2:CreateNetworkInterface",
+                    "ec2:DescribeNetworkInterfaces",
+                    "ec2:DeleteNetworkInterface",
+                    "ec2:DescribeSubnets",
+                    "ec2:DescribeSecurityGroups",
+                    "ec2:DescribeDhcpOptions",
+                    "ec2:DescribeVpcs",
+                    "ec2:CreateNetworkInterfacePermission"
+                  ],
+                  "Effect": "Allow",
+                  "Resource": "*"
+                }
+              ]
+            }
+          }
+        ]
+      }
+},
+"AppPipeline": {
+  "Type": "AWS::CodePipeline::Pipeline", 
+  "Properties": { 
+    "RoleArn": { "Ref" : "CodePipelineServiceRole" },
+    "Stages": [ 
+      { 
+        "Name": "Source",
+        "Actions": [ 
+          { 
+            "Name": "SourceAction",
+            "ActionTypeId": { 
+              "Category": "Source", 
+              "Owner": "AWS",
+              "Version": "1", 
+              "Provider": "S3" 
+            }, 
+            "OutputArtifacts": [ 
+              { "Name": "SourceOutput" 
+              }
+            ], 
+            "Configuration": { 
+              "S3Bucket": { "Ref" : "SourceS3Bucket" }, 
+              "S3ObjectKey": { "Ref" : "SourceS3ObjectKey" }
+            }, 
+            "RunOrder": 1 
+          } 
+        ] 
+      }, 
+      { 
+        "Name": "Beta", 
+        "Actions": [ 
+          { 
+            "Name": "BetaAction", 
+            "InputArtifacts": [ 
+              { 
+                "Name": "SourceOutput" 
+              } 
+            ], 
+            "ActionTypeId": {
+              "Category": "Deploy", 
+              "Owner": "AWS", 
+              "Version": "1", 
+              "Provider": "CodeDeploy" 
+            },
+            "Configuration": { 
+              "ApplicationName": {"Ref" : "ApplicationName"}, 
+              "DeploymentGroupName": {"Ref" : "DeploymentGroupName"} 
+            }, 
+            "RunOrder": 1 
+          } 
+        ] 
+      }, 
+      { 
+        "Name": "Release", 
+        "Actions": [ 
+          {
+            "Name": "ReleaseAction", 
+            "InputArtifacts": [ 
+              { 
+                "Name": "SourceOutput" 
+              } 
+            ], 
+            "ActionTypeId": {
+              "Category": "Deploy", 
+              "Owner": "AWS", 
+              "Version": "1", 
+              "Provider": "CodeDeploy" 
+            },
+            "Configuration": { 
+              "ApplicationName": {"Ref" : "ApplicationName"}, 
+              "DeploymentGroupName": {"Ref" : "DeploymentGroupName"} 
+            }, 
+            "RunOrder": 1 
+          } 
+        ] 
+      } 
+    ], 
+    "ArtifactStore": { 
+      "Type": "S3",
+      "Location": { "Ref" : "ArtifactStoreS3Location" },
+      "EncryptionKey": {
+        "Id": "arn:aws:kms:useast-1:ACCOUNT-ID:key/KEY-ID",
+        "Type": "KMS"
+      }, 
+    "DisableInboundStageTransitions": [ 
+      {
+        "StageName": "Release", 
+        "Reason": "Disabling the transition until integration tests are completed" 
+      } 
+    ],
+    "Tags": [
+      {
+        "Key": "Project",
+        "Value": "ProjectA"
+      },
+      {
+        "Key": "IsContainerBased",
+        "Value": "true"
+      }
+    ]
+  } 
+}
+
+codepipeline
+deploy
+}
+
